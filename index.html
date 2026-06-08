@@ -1,0 +1,1567 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Карта автоматизации с ИИ</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --navy: #1a2744;
+  --navy-mid: #2a3a5e;
+  --accent: #4a90d9;
+  --accent-light: #e8f2fc;
+  --accent-mid: #b5d4f4;
+  --success: #1D9E75;
+  --success-light: #E1F5EE;
+  --warn: #BA7517;
+  --warn-light: #FAEEDA;
+  --human: #993556;
+  --human-light: #FBEAF0;
+  --border: rgba(26,39,68,0.12);
+  --border-mid: rgba(26,39,68,0.22);
+  --bg: #f4f6fb;
+  --bg-card: #ffffff;
+  --text: #1a2744;
+  --text-muted: #6b7a99;
+  --r: 10px;
+  --rlg: 14px;
+  --tap: 48px;
+}
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  font-family: -apple-system, 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── HEADER ── */
+.header {
+  background: var(--navy);
+  color: #fff;
+  padding: 1.25rem 1rem 0;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.header-top {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.header-icon {
+  width: 40px; height: 40px;
+  background: rgba(255,255,255,0.13);
+  border-radius: var(--r);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.header h1 {
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: #fff;
+}
+
+/* ── STEP PROGRESS BAR ── */
+.progress-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding-bottom: 0;
+  overflow: hidden;
+}
+
+.progress-step {
+  flex: 1;
+  height: 4px;
+  background: rgba(255,255,255,0.18);
+  transition: background 0.3s;
+  border-radius: 0;
+}
+.progress-step:first-child { border-radius: 2px 0 0 2px; }
+.progress-step:last-child { border-radius: 0 2px 2px 0; }
+.progress-step.done { background: rgba(255,255,255,0.6); }
+.progress-step.active { background: var(--accent); }
+
+/* ── STEP TABS (scrollable) ── */
+.steps-nav {
+  display: flex;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  gap: 4px;
+  padding: 0.6rem 0 0.75rem;
+}
+.steps-nav::-webkit-scrollbar { display: none; }
+
+.step-btn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0.45rem 0.85rem;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.07);
+  color: rgba(255,255,255,0.5);
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+  min-height: var(--tap);
+}
+.step-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.step-btn.done {
+  background: rgba(255,255,255,0.15);
+  border-color: rgba(255,255,255,0.25);
+  color: rgba(255,255,255,0.8);
+}
+.step-num {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.18);
+  font-size: 0.65rem;
+  font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+.step-btn.done .step-num { background: rgba(255,255,255,0.3); }
+.step-btn.active .step-num { background: rgba(255,255,255,0.3); }
+
+/* ── MAIN ── */
+.main {
+  padding: 1.25rem 1rem 6rem;
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.section { display: none; }
+.section.active { display: block; animation: fadeUp 0.22s ease; }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.section-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--navy);
+  margin-bottom: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.section-desc {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 1.25rem;
+  line-height: 1.65;
+}
+
+/* ── CARDS ── */
+.card {
+  background: var(--bg-card);
+  border: 0.5px solid var(--border);
+  border-radius: var(--rlg);
+  padding: 1rem 1rem;
+  margin-bottom: 0.85rem;
+}
+
+/* ── FORM ELEMENTS ── */
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 0.75rem;
+}
+.field-group:last-child { margin-bottom: 0; }
+
+.field-group.row2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.045em;
+}
+
+input[type="text"], textarea, select {
+  width: 100%;
+  border: 1px solid var(--border-mid);
+  border-radius: var(--r);
+  padding: 0.7rem 0.85rem;
+  font-size: 1rem; /* 16px — prevents iOS zoom */
+  color: var(--text);
+  background: #fff;
+  font-family: inherit;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+  min-height: var(--tap);
+}
+input[type="text"]:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(74,144,217,0.13);
+}
+textarea {
+  resize: none;
+  line-height: 1.55;
+  min-height: 80px;
+}
+select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24'%3E%3Cpath fill='%236b7a99' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 2rem;
+}
+
+/* ── TASK CARD ── */
+.task-card {
+  background: var(--bg-card);
+  border: 0.5px solid var(--border);
+  border-radius: var(--rlg);
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.task-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.85rem;
+}
+
+.task-num {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--accent);
+  background: var(--accent-light);
+  padding: 3px 10px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.btn-remove {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 18px;
+  padding: 6px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  min-width: var(--tap);
+  min-height: var(--tap);
+  justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-remove:active { color: #c0392b; background: #fdecea; }
+
+.repeat-row {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 0.5px solid var(--border);
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  line-height: 1.5;
+  min-height: var(--tap);
+  align-items: center;
+}
+
+input[type="checkbox"] {
+  width: 20px; height: 20px;
+  flex-shrink: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+/* ── ADD BUTTON ── */
+.btn-add {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0.85rem 1rem;
+  border: 1.5px dashed var(--accent-mid);
+  border-radius: var(--r);
+  background: var(--accent-light);
+  color: var(--accent);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  width: 100%;
+  justify-content: center;
+  margin-top: 0.25rem;
+  min-height: var(--tap);
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-add:active { background: #d0e8f8; }
+
+/* ── CLASSIFY ── */
+.classify-card {
+  background: var(--bg-card);
+  border: 0.5px solid var(--border);
+  border-radius: var(--rlg);
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.classify-task-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--navy);
+  margin-bottom: 0.2rem;
+}
+
+.classify-task-meta {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-bottom: 0.85rem;
+}
+
+.classify-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 0.85rem;
+}
+
+.classify-opt {
+  border: 1.5px solid var(--border-mid);
+  border-radius: var(--r);
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.18s;
+  min-height: var(--tap);
+  -webkit-tap-highlight-color: transparent;
+  position: relative;
+}
+
+.classify-opt input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  width: 0; height: 0;
+}
+
+.classify-opt-icon {
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.classify-opt-text { flex: 1; }
+
+.classify-opt .opt-label {
+  font-size: 0.88rem;
+  font-weight: 600;
+  display: block;
+  line-height: 1.3;
+}
+.classify-opt .opt-hint {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  display: block;
+  margin-top: 2px;
+}
+
+.opt-check {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--border-mid);
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px;
+  color: transparent;
+  transition: all 0.18s;
+}
+
+.classify-opt.ai-full { border-color: #9FE1CB; }
+.classify-opt.ai-full:active, .classify-opt.ai-full.selected {
+  background: var(--success-light);
+  border-color: var(--success);
+}
+.classify-opt.ai-full.selected .opt-label { color: var(--success); }
+.classify-opt.ai-full.selected .opt-check { border-color: var(--success); background: var(--success); color: #fff; }
+
+.classify-opt.ai-help { border-color: #FAC775; }
+.classify-opt.ai-help:active, .classify-opt.ai-help.selected {
+  background: var(--warn-light);
+  border-color: var(--warn);
+}
+.classify-opt.ai-help.selected .opt-label { color: var(--warn); }
+.classify-opt.ai-help.selected .opt-check { border-color: var(--warn); background: var(--warn); color: #fff; }
+
+.classify-opt.human-only { border-color: #F4C0D1; }
+.classify-opt.human-only:active, .classify-opt.human-only.selected {
+  background: var(--human-light);
+  border-color: var(--human);
+}
+.classify-opt.human-only.selected .opt-label { color: var(--human); }
+.classify-opt.human-only.selected .opt-check { border-color: var(--human); background: var(--human); color: #fff; }
+
+/* ── CATEGORY LEGEND ── */
+.legend {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.legend-item {
+  border-radius: var(--r);
+  padding: 0.65rem 0.85rem;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+.legend-item strong { display: block; margin-bottom: 2px; }
+.legend-item.suc { background: var(--success-light); color: #0F6E56; border: 0.5px solid rgba(29,158,117,0.25); }
+.legend-item.wrn { background: var(--warn-light); color: #633806; border: 0.5px solid rgba(186,117,23,0.25); }
+.legend-item.hum { background: var(--human-light); color: #72243E; border: 0.5px solid rgba(153,53,86,0.25); }
+
+/* ── PROJECT CARD ── */
+.project-card {
+  background: var(--bg-card);
+  border: 0.5px solid var(--border);
+  border-left: 4px solid var(--accent);
+  border-radius: var(--rlg);
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+}
+.project-card.ai-help { border-left-color: var(--warn); }
+
+.project-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 0.85rem;
+}
+
+.project-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+.badge-ai-full { background: var(--success-light); color: var(--success); }
+.badge-ai-help { background: var(--warn-light); color: var(--warn); }
+
+.project-task-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--navy);
+}
+
+/* ── BOTTOM NAV ── */
+.nav-btns {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: var(--bg-card);
+  border-top: 0.5px solid var(--border);
+  padding: 0.75rem 1rem;
+  padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  z-index: 40;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 1.25rem;
+  border-radius: var(--r);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  font-family: inherit;
+  min-height: var(--tap);
+  -webkit-tap-highlight-color: transparent;
+  white-space: nowrap;
+  transition: opacity 0.15s;
+}
+.btn:active { opacity: 0.75; }
+
+.btn-primary { background: var(--navy); color: #fff; flex: 1; justify-content: center; }
+.btn-secondary { background: var(--bg); color: var(--text); border: 0.5px solid var(--border-mid); flex-shrink: 0; }
+.btn-submit { background: var(--success); color: #fff; flex: 1; justify-content: center; }
+
+.btn-icon-only {
+  min-width: var(--tap);
+  padding: 0;
+  justify-content: center;
+  flex: 0;
+}
+
+/* ── INFO BOX ── */
+.info-box {
+  background: var(--accent-light);
+  border: 0.5px solid var(--accent-mid);
+  border-radius: var(--r);
+  padding: 0.75rem 0.85rem;
+  font-size: 0.82rem;
+  color: #185FA5;
+  line-height: 1.6;
+  margin-bottom: 1rem;
+  display: flex;
+  gap: 8px;
+}
+.info-box i { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+
+/* ── SUMMARY ── */
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.6rem;
+  margin-bottom: 1.25rem;
+}
+
+.summary-stat {
+  background: var(--bg-card);
+  border: 0.5px solid var(--border);
+  border-radius: var(--r);
+  padding: 0.85rem 0.5rem;
+  text-align: center;
+}
+.summary-stat .num {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--navy);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.summary-stat .lbl {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  line-height: 1.3;
+}
+
+/* ── EMPTY STATE ── */
+.empty-state {
+  text-align: center;
+  padding: 2.5rem 1rem;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+.empty-state i { font-size: 2rem; display: block; margin-bottom: 10px; opacity: 0.35; }
+
+/* ── MODAL ── */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(10,20,50,0.55);
+  z-index: 200;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0;
+}
+.modal-overlay.open { display: flex; }
+
+.modal {
+  background: #fff;
+  border-radius: 20px 20px 0 0;
+  padding: 1.5rem 1.25rem;
+  padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
+  width: 100%;
+  max-width: 520px;
+  animation: slideUp 0.22s ease;
+}
+@keyframes slideUp {
+  from { transform: translateY(60px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.modal-handle {
+  width: 36px; height: 4px;
+  background: var(--border-mid);
+  border-radius: 2px;
+  margin: 0 auto 1.25rem;
+}
+.modal h3 { font-size: 1.05rem; font-weight: 600; color: var(--navy); margin-bottom: 0.5rem; }
+.modal p { font-size: 0.875rem; color: var(--text-muted); line-height: 1.55; margin-bottom: 1.25rem; }
+.modal-btns { display: flex; flex-direction: column; gap: 0.5rem; }
+.modal-btns .btn { width: 100%; justify-content: center; }
+
+/* ── CONFIG PANEL ── */
+.config-panel {
+  background: #f0f2f7;
+  border-top: 0.5px solid var(--border);
+  padding: 0.75rem 1rem;
+  font-size: 0.8rem;
+  display: none;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.config-panel label { text-transform: none; letter-spacing: 0; color: var(--text-muted); font-size: 0.78rem; }
+.config-panel input {
+  font-size: 0.85rem;
+  min-height: 40px;
+  background: #fff;
+  border: 1px solid var(--border-mid);
+  color: var(--text);
+}
+.config-panel .cfg-btns { display: flex; gap: 0.5rem; }
+.config-panel .cfg-btns .btn { font-size: 0.8rem; min-height: 40px; padding: 0 1rem; flex: 1; }
+
+.config-toggle-row {
+  text-align: center;
+  padding: 0.5rem;
+  background: #f0f2f7;
+}
+.config-toggle-row button {
+  background: none;
+  border: none;
+  font-size: 0.72rem;
+  color: #aaa;
+  cursor: pointer;
+  padding: 0.5rem;
+  min-height: var(--tap);
+}
+
+/* summary profile grid */
+.prof-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+}
+.prof-grid .full { grid-column: 1/-1; }
+
+/* section spacing */
+.section-title { margin-top: 0.25rem; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-top">
+    <div class="header-icon"><i class="ti ti-brain" style="color:#fff" aria-hidden="true"></i></div>
+    <h1>Карта возможностей<br>автоматизации с ИИ</h1>
+  </div>
+  <div class="progress-wrap" id="progressWrap">
+    <div class="progress-step active" id="pg0"></div>
+    <div class="progress-step" id="pg1"></div>
+    <div class="progress-step" id="pg2"></div>
+    <div class="progress-step" id="pg3"></div>
+    <div class="progress-step" id="pg4"></div>
+  </div>
+  <nav class="steps-nav" id="stepsNav" role="tablist">
+    <button class="step-btn active" onclick="goTo(0)" role="tab" aria-selected="true">
+      <span class="step-num">1</span> Профиль
+    </button>
+    <button class="step-btn" onclick="goTo(1)" role="tab">
+      <span class="step-num">2</span> Задачи
+    </button>
+    <button class="step-btn" onclick="goTo(2)" role="tab">
+      <span class="step-num">3</span> Классификация
+    </button>
+    <button class="step-btn" onclick="goTo(3)" role="tab">
+      <span class="step-num">4</span> Проекты
+    </button>
+    <button class="step-btn" onclick="goTo(4)" role="tab">
+      <span class="step-num">5</span> Итог
+    </button>
+  </nav>
+</div>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- ШАГ 0 -->
+  <section class="section active" id="s0">
+    <h2 class="section-title"><i class="ti ti-user-circle" aria-hidden="true"></i> Ваш профиль</h2>
+    <p class="section-desc">Укажите информацию о себе — она войдёт в итоговую карту для преподавателя.</p>
+    <div class="card">
+      <div class="field-group">
+        <label for="fname">Имя и фамилия</label>
+        <input type="text" id="fname" placeholder="Например: Алия Каримова" autocomplete="name" oninput="scheduleSave()">
+      </div>
+      <div class="field-group">
+        <label for="fgroup">Группа / поток</label>
+        <input type="text" id="fgroup" placeholder="Например: MBA-2025-A" oninput="scheduleSave()">
+      </div>
+      <div class="field-group">
+        <label for="fsphere">Сфера деятельности</label>
+        <input type="text" id="fsphere" placeholder="Финансы, образование, логистика..." oninput="scheduleSave()">
+      </div>
+      <div class="field-group">
+        <label for="fposition">Должность / роль</label>
+        <input type="text" id="fposition" placeholder="Руководитель отдела маркетинга" oninput="scheduleSave()">
+      </div>
+      <div class="field-group">
+        <label for="forg">Организация</label>
+        <input type="text" id="forg" placeholder="Название компании или «учебный проект»" autocomplete="organization" oninput="scheduleSave()">
+      </div>
+    </div>
+  </section>
+
+  <!-- ШАГ 1 -->
+  <section class="section" id="s1">
+    <h2 class="section-title"><i class="ti ti-list-check" aria-hidden="true"></i> Все задачи в вашей работе</h2>
+    <p class="section-desc">Перечислите все значимые задачи, которые выполняете регулярно. Затем отметьте повторяющиеся — они станут кандидатами для автоматизации.</p>
+    <div class="info-box">
+      <i class="ti ti-info-circle" aria-hidden="true"></i>
+      <span>Добавьте 5–10 задач. Включайте административные, аналитические и коммуникационные задачи.</span>
+    </div>
+    <div id="tasksContainer"></div>
+    <button class="btn-add" onclick="addTask()">
+      <i class="ti ti-plus" aria-hidden="true"></i> Добавить задачу
+    </button>
+  </section>
+
+  <!-- ШАГ 2 -->
+  <section class="section" id="s2">
+    <h2 class="section-title"><i class="ti ti-filter" aria-hidden="true"></i> Классификация задач</h2>
+    <p class="section-desc">Для каждой повторяющейся задачи определите, насколько хорошо с ней справится ИИ.</p>
+    <div class="legend">
+      <div class="legend-item suc">
+        <i class="ti ti-robot" aria-hidden="true"></i>
+        <div><strong>ИИ справится самостоятельно</strong>Стандартные ответы, чёткий процесс, документированная информация</div>
+      </div>
+      <div class="legend-item wrn">
+        <i class="ti ti-users" aria-hidden="true"></i>
+        <div><strong>ИИ помогает, решает человек</strong>ИИ готовит черновик или план — вы проверяете и решаете</div>
+      </div>
+      <div class="legend-item hum">
+        <i class="ti ti-heart" aria-hidden="true"></i>
+        <div><strong>Только человек</strong>Высокие ставки, эмоциональный контекст, сложные суждения</div>
+      </div>
+    </div>
+    <div id="classifyContainer">
+      <div class="empty-state">
+        <i class="ti ti-arrow-up-circle"></i>
+        Вернитесь на шаг 2 и отметьте повторяющиеся задачи
+      </div>
+    </div>
+  </section>
+
+  <!-- ШАГ 3 -->
+  <section class="section" id="s3">
+    <h2 class="section-title"><i class="ti ti-rocket" aria-hidden="true"></i> Описание проектов</h2>
+    <p class="section-desc">Для задач категорий «ИИ справится» и «ИИ помогает» опишите будущий проект. Это станет основой промтов и скиллов в Claude.</p>
+    <div id="projectsContainer">
+      <div class="empty-state">
+        <i class="ti ti-arrow-up-circle"></i>
+        Классифицируйте задачи на предыдущем шаге
+      </div>
+    </div>
+  </section>
+
+  <!-- ШАГ 4 -->
+  <section class="section" id="s4">
+    <h2 class="section-title"><i class="ti ti-chart-bar" aria-hidden="true"></i> Итоговая карта</h2>
+    <p class="section-desc">Карта готова. Отправьте преподавателю.</p>
+    <div class="summary-grid" id="summaryGrid"></div>
+    <div id="summaryContent"></div>
+  </section>
+
+</main>
+
+<!-- BOTTOM NAV -->
+<div class="nav-btns" id="navBtns">
+  <button class="btn btn-secondary btn-icon-only" id="btnBack" onclick="prevStep()" aria-label="Назад" style="display:none">
+    <i class="ti ti-arrow-left" aria-hidden="true"></i>
+  </button>
+  <button class="btn btn-primary" id="btnNext" onclick="nextStep()">
+    Далее <i class="ti ti-arrow-right" aria-hidden="true"></i>
+  </button>
+</div>
+
+<!-- CONFIG -->
+<div class="config-panel" id="configPanel">
+  <label for="webhookUrl"><i class="ti ti-settings" style="margin-right:4px"></i>URL Google Apps Script (для преподавателя)</label>
+  <input type="url" id="webhookUrl" placeholder="https://script.google.com/macros/s/.../exec">
+  <div class="cfg-btns">
+    <button class="btn btn-primary" onclick="saveConfig()"><i class="ti ti-check"></i> Сохранить</button>
+    <button class="btn btn-secondary" onclick="toggleConfig()">Закрыть</button>
+  </div>
+</div>
+
+<div class="config-toggle-row">
+  <button onclick="toggleConfig()">
+    <i class="ti ti-settings" style="font-size:11px"></i> Настройка преподавателя
+  </button>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay" onclick="handleOverlayClick(event)">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="modal-handle"></div>
+    <h3 id="modalTitle"></h3>
+    <p id="modalMsg"></p>
+    <div class="modal-btns" id="modalBtns"></div>
+  </div>
+</div>
+
+<script>
+let currentStep = 0;
+let taskCount = 0;
+const classifyStore = {};
+const classifyReasonStore = {};
+
+function updateNav() {
+  const back = document.getElementById('btnBack');
+  const next = document.getElementById('btnNext');
+  back.style.display = currentStep === 0 ? 'none' : 'flex';
+  if (currentStep === 4) {
+    next.innerHTML = '<i class="ti ti-copy"></i> Копировать';
+    next.className = 'btn btn-secondary';
+    next.onclick = copyAll;
+    const existing = document.getElementById('btnSubmitFixed');
+    if (!existing) {
+      const sb = document.createElement('button');
+      sb.id = 'btnSubmitFixed';
+      sb.className = 'btn btn-submit';
+      sb.innerHTML = '<i class="ti ti-send"></i> Отправить';
+      sb.onclick = submitData;
+      document.getElementById('navBtns').appendChild(sb);
+    }
+  } else {
+    next.innerHTML = 'Далее <i class="ti ti-arrow-right"></i>';
+    next.className = 'btn btn-primary';
+    next.onclick = nextStep;
+    const sb = document.getElementById('btnSubmitFixed');
+    if (sb) sb.remove();
+  }
+}
+
+function goTo(step) {
+  document.querySelectorAll('.section').forEach((s, i) => s.classList.toggle('active', i === step));
+  document.querySelectorAll('.step-btn').forEach((b, i) => {
+    b.classList.remove('active','done');
+    if (i === step) b.classList.add('active');
+    if (i < step) b.classList.add('done');
+    b.setAttribute('aria-selected', i === step ? 'true' : 'false');
+  });
+  for (let i = 0; i < 5; i++) {
+    const p = document.getElementById('pg' + i);
+    p.classList.remove('active','done');
+    if (i === step) p.classList.add('active');
+    if (i < step) p.classList.add('done');
+  }
+  currentStep = step;
+  // Scroll active tab into view
+  const activeBtn = document.querySelector('.step-btn.active');
+  if (activeBtn) activeBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  updateNav();
+}
+
+function nextStep() {
+  if (currentStep === 0 && !validateProfile()) return;
+  if (currentStep === 1 && !validateTasks()) return;
+  if (currentStep === 2) { saveClassifyReasons(); buildProjects(); }
+  if (currentStep === 3) buildSummary();
+  goTo(currentStep + 1);
+}
+
+function prevStep() {
+  if (currentStep > 0) goTo(currentStep - 1);
+}
+
+function validateProfile() {
+  const name = document.getElementById('fname').value.trim();
+  const sphere = document.getElementById('fsphere').value.trim();
+  if (!name || !sphere) {
+    showModal('Заполните профиль', 'Укажите имя и фамилию, а также сферу деятельности.', [
+      { label: 'Понятно', primary: true, action: closeModal }
+    ]);
+    return false;
+  }
+  return true;
+}
+
+function validateTasks() {
+  const tasks = getTaskData();
+  if (tasks.length < 2) {
+    showModal('Добавьте задачи', 'Добавьте не менее 2 задач, чтобы продолжить.', [
+      { label: 'Добавить', primary: true, action: closeModal }
+    ]);
+    return false;
+  }
+  const repeating = tasks.filter(t => t.isRepeating);
+  if (repeating.length === 0) {
+    showModal('Отметьте повторяющиеся задачи', 'Отметьте хотя бы одну задачу как повторяющуюся — она станет кандидатом для автоматизации.', [
+      { label: 'Понятно', primary: true, action: closeModal }
+    ]);
+    return false;
+  }
+  buildClassify();
+  return true;
+}
+
+// addTask defined in autosave block below
+
+function removeTask(id) {
+  scheduleSave();
+  const el = document.getElementById('task-' + id);
+  if (el) el.remove();
+}
+
+function getTaskData() {
+  const tasks = [];
+  document.querySelectorAll('.task-card').forEach(card => {
+    const id = card.id.replace('task-', '');
+    const name = (document.getElementById('tname-' + id)?.value || '').trim();
+    if (!name) return;
+    tasks.push({
+      id, name,
+      desc: (document.getElementById('tdesc-' + id)?.value || '').trim(),
+      freq: document.getElementById('tfreq-' + id)?.value || '',
+      time: (document.getElementById('ttime-' + id)?.value || '').trim(),
+      std: document.getElementById('tstd-' + id)?.value || '',
+      isRepeating: document.getElementById('trep-' + id)?.checked || false
+    });
+  });
+  return tasks;
+}
+
+function buildClassify() {
+  const tasks = getTaskData().filter(t => t.isRepeating);
+  const container = document.getElementById('classifyContainer');
+  container.innerHTML = '';
+  if (tasks.length === 0) {
+    container.innerHTML = '<div class="empty-state"><i class="ti ti-info-circle"></i>Нет повторяющихся задач. Вернитесь и отметьте их.</div>';
+    return;
+  }
+  tasks.forEach(t => {
+    const cur = classifyStore[t.id] || '';
+    const div = document.createElement('div');
+    div.className = 'classify-card';
+    div.id = 'classify-' + t.id;
+    div.innerHTML = `
+      <div class="classify-task-name">${esc(t.name)}</div>
+      <div class="classify-task-meta">${[t.freq, t.time, t.std].filter(Boolean).join(' · ')}</div>
+      <div class="classify-options">
+        <label class="classify-opt ai-full${cur==='ai-full'?' selected':''}" onclick="selectCls('${t.id}','ai-full',this)">
+          <input type="radio" name="cls-${t.id}" value="ai-full" ${cur==='ai-full'?'checked':''}>
+          <i class="ti ti-robot classify-opt-icon" style="color:var(--success)" aria-hidden="true"></i>
+          <div class="classify-opt-text">
+            <span class="opt-label">ИИ справится</span>
+            <span class="opt-hint">Стандартная задача, чёткий процесс</span>
+          </div>
+          <span class="opt-check">${cur==='ai-full'?'✓':''}</span>
+        </label>
+        <label class="classify-opt ai-help${cur==='ai-help'?' selected':''}" onclick="selectCls('${t.id}','ai-help',this)">
+          <input type="radio" name="cls-${t.id}" value="ai-help" ${cur==='ai-help'?'checked':''}>
+          <i class="ti ti-users classify-opt-icon" style="color:var(--warn)" aria-hidden="true"></i>
+          <div class="classify-opt-text">
+            <span class="opt-label">ИИ помогает</span>
+            <span class="opt-hint">ИИ готовит, вы решаете</span>
+          </div>
+          <span class="opt-check">${cur==='ai-help'?'✓':''}</span>
+        </label>
+        <label class="classify-opt human-only${cur==='human-only'?' selected':''}" onclick="selectCls('${t.id}','human-only',this)">
+          <input type="radio" name="cls-${t.id}" value="human-only" ${cur==='human-only'?'checked':''}>
+          <i class="ti ti-heart classify-opt-icon" style="color:var(--human)" aria-hidden="true"></i>
+          <div class="classify-opt-text">
+            <span class="opt-label">Только человек</span>
+            <span class="opt-hint">Высокие ставки, эмоции, суждения</span>
+          </div>
+          <span class="opt-check">${cur==='human-only'?'✓':''}</span>
+        </label>
+      </div>
+      <div class="field-group">
+        <label for="clsr-${t.id}">Обоснование выбора</label>
+        <textarea id="clsr-${t.id}" placeholder="Почему именно эта категория?">${classifyReasonStore[t.id]||''}</textarea>
+      </div>`;
+    container.appendChild(div);
+  });
+}
+
+function selectCls(taskId, val, labelEl) {
+  classifyStore[taskId] = val;
+  const card = document.getElementById('classify-' + taskId);
+  card.querySelectorAll('.classify-opt').forEach(opt => {
+    opt.classList.remove('selected');
+    const chk = opt.querySelector('.opt-check');
+    if (chk) chk.textContent = '';
+  });
+  labelEl.classList.add('selected');
+  const chk = labelEl.querySelector('.opt-check');
+  if (chk) chk.textContent = '✓';
+}
+
+function saveClassifyReasons() {
+  document.querySelectorAll('[id^="clsr-"]').forEach(el => {
+    classifyReasonStore[el.id.replace('clsr-', '')] = el.value.trim();
+  });
+}
+
+function buildProjects() {
+  const tasks = getTaskData().filter(t => t.isRepeating);
+  const container = document.getElementById('projectsContainer');
+  container.innerHTML = '';
+  const eligible = tasks.filter(t => classifyStore[t.id] === 'ai-full' || classifyStore[t.id] === 'ai-help');
+  if (eligible.length === 0) {
+    container.innerHTML = '<div class="empty-state"><i class="ti ti-info-circle"></i>Нет задач в категориях «ИИ справится» или «ИИ помогает».</div>';
+    return;
+  }
+  eligible.forEach((t, idx) => {
+    const isHelp = classifyStore[t.id] === 'ai-help';
+    const prev = getProjValues(t.id);
+    const div = document.createElement('div');
+    div.className = 'project-card' + (isHelp ? ' ai-help' : '');
+    div.id = 'proj-' + t.id;
+    div.innerHTML = `
+      <div class="project-header">
+        <span class="project-badge ${isHelp?'badge-ai-help':'badge-ai-full'}">${isHelp?'ИИ помогает':'ИИ справится'}</span>
+        <span class="project-task-name">Проект ${idx+1}: ${esc(t.name)}</span>
+      </div>
+      <div class="field-group">
+        <label for="pproduct-${t.id}">Результат: что создаёт ИИ?</label>
+        <textarea id="pproduct-${t.id}" placeholder="Документ, таблица, черновик, анализ, ответ...">${prev.product}</textarea>
+      </div>
+      <div class="field-group">
+        <label for="pinput-${t.id}">Входные данные: что получает ИИ?</label>
+        <textarea id="pinput-${t.id}" placeholder="Данные, текст, контекст, таблицы...">${prev.input}</textarea>
+      </div>
+      <div class="field-group">
+        <label for="pprocess-${t.id}">Процесс шаг за шагом</label>
+        <textarea id="pprocess-${t.id}" placeholder="1. Анализирует...&#10;2. Формирует...&#10;3. Выдаёт...">${prev.process}</textarea>
+      </div>
+      <div class="field-group">
+        <label for="pbehavior-${t.id}">Тон, стиль, ограничения</label>
+        <textarea id="pbehavior-${t.id}" placeholder="Какой тон? Что никогда не делать?">${prev.behavior}</textarea>
+      </div>
+      <div class="field-group">
+        <label for="ptool-${t.id}">Инструмент в Claude</label>
+        <select id="ptool-${t.id}">
+          <option value="">— выберите —</option>
+          <option ${prev.tool==='Проект (Project) с инструкциями'?'selected':''}>Проект (Project) с инструкциями</option>
+          <option ${prev.tool==='Скилл (Skill) для повторного использования'?'selected':''}>Скилл (Skill) для повторного использования</option>
+          <option ${prev.tool==='Артефакт (таблица, документ)'?'selected':''}>Артефакт (таблица, документ)</option>
+          <option ${prev.tool==='Автоматизация через Cowork'?'selected':''}>Автоматизация через Cowork</option>
+        </select>
+      </div>`;
+    container.appendChild(div);
+  });
+}
+
+const projCache = {};
+function getProjValues(id) {
+  return {
+    product: document.getElementById('pproduct-'+id)?.value || projCache['p'+id]?.product || '',
+    input: document.getElementById('pinput-'+id)?.value || projCache['p'+id]?.input || '',
+    process: document.getElementById('pprocess-'+id)?.value || projCache['p'+id]?.process || '',
+    behavior: document.getElementById('pbehavior-'+id)?.value || projCache['p'+id]?.behavior || '',
+    tool: document.getElementById('ptool-'+id)?.value || projCache['p'+id]?.tool || ''
+  };
+}
+
+function getProjectData() {
+  const projects = [];
+  const tasks = getTaskData().filter(t => t.isRepeating);
+  tasks.filter(t => classifyStore[t.id]==='ai-full'||classifyStore[t.id]==='ai-help').forEach(t => {
+    projects.push({
+      taskId: t.id, taskName: t.name,
+      classification: classifyStore[t.id],
+      product: (document.getElementById('pproduct-'+t.id)?.value||'').trim(),
+      input: (document.getElementById('pinput-'+t.id)?.value||'').trim(),
+      process: (document.getElementById('pprocess-'+t.id)?.value||'').trim(),
+      behavior: (document.getElementById('pbehavior-'+t.id)?.value||'').trim(),
+      tool: document.getElementById('ptool-'+t.id)?.value||''
+    });
+  });
+  return projects;
+}
+
+function buildSummary() {
+  const tasks = getTaskData();
+  const repeating = tasks.filter(t => t.isRepeating);
+  const projects = getProjectData();
+  document.getElementById('summaryGrid').innerHTML = `
+    <div class="summary-stat"><div class="num">${tasks.length}</div><div class="lbl">задач описано</div></div>
+    <div class="summary-stat"><div class="num">${repeating.length}</div><div class="lbl">повторяющихся</div></div>
+    <div class="summary-stat"><div class="num">${projects.length}</div><div class="lbl">проектов ИИ</div></div>`;
+
+  const p = getProfile();
+  let html = `<div class="card" style="margin-bottom:0.85rem;">
+    <div style="font-size:0.72rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.65rem;">Профиль студента</div>
+    <div class="prof-grid">
+      <div><span style="color:var(--text-muted);font-size:.8rem;">Имя: </span>${esc(p.name||'—')}</div>
+      <div><span style="color:var(--text-muted);font-size:.8rem;">Группа: </span>${esc(p.group||'—')}</div>
+      <div><span style="color:var(--text-muted);font-size:.8rem;">Сфера: </span>${esc(p.sphere||'—')}</div>
+      <div><span style="color:var(--text-muted);font-size:.8rem;">Должность: </span>${esc(p.position||'—')}</div>
+      <div class="full"><span style="color:var(--text-muted);font-size:.8rem;">Организация: </span>${esc(p.org||'—')}</div>
+    </div>
+  </div>`;
+
+  if (projects.length > 0) {
+    html += `<div style="font-size:.72rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.65rem;">Проекты автоматизации</div>`;
+    projects.forEach((pr, i) => {
+      const isH = pr.classification==='ai-help';
+      html += `<div class="project-card${isH?' ai-help':''}" style="margin-bottom:.65rem;">
+        <div class="project-header" style="margin-bottom:.65rem;">
+          <span class="project-badge ${isH?'badge-ai-help':'badge-ai-full'}">${isH?'ИИ помогает':'ИИ справится'}</span>
+          <span class="project-task-name">Проект ${i+1}: ${esc(pr.taskName)}</span>
+        </div>
+        <div style="font-size:.83rem;display:flex;flex-direction:column;gap:.35rem;">
+          ${pr.product?`<div><strong style="color:var(--text-muted)">Результат:</strong> ${esc(pr.product)}</div>`:''}
+          ${pr.input?`<div><strong style="color:var(--text-muted)">Входные данные:</strong> ${esc(pr.input)}</div>`:''}
+          ${pr.process?`<div><strong style="color:var(--text-muted)">Процесс:</strong> ${esc(pr.process)}</div>`:''}
+          ${pr.behavior?`<div><strong style="color:var(--text-muted)">Поведение:</strong> ${esc(pr.behavior)}</div>`:''}
+          ${pr.tool?`<div><strong style="color:var(--text-muted)">Инструмент:</strong> ${esc(pr.tool)}</div>`:''}
+        </div>
+      </div>`;
+    });
+  }
+  document.getElementById('summaryContent').innerHTML = html;
+}
+
+function getProfile() {
+  return {
+    name: document.getElementById('fname')?.value.trim()||'',
+    group: document.getElementById('fgroup')?.value.trim()||'',
+    sphere: document.getElementById('fsphere')?.value.trim()||'',
+    position: document.getElementById('fposition')?.value.trim()||'',
+    org: document.getElementById('forg')?.value.trim()||''
+  };
+}
+
+function collectAllData() {
+  return { profile: getProfile(), tasks: getTaskData(), projects: getProjectData(), timestamp: new Date().toISOString() };
+}
+
+function copyAll() {
+  const data = collectAllData();
+  const p = data.profile;
+  let t = `КАРТА ВОЗМОЖНОСТЕЙ АВТОМАТИЗАЦИИ С ИИ\nДата: ${new Date().toLocaleDateString('ru-RU')}\n\nПРОФИЛЬ СТУДЕНТА\n`;
+  t += `Имя: ${p.name}\nГруппа: ${p.group}\nСфера: ${p.sphere}\nДолжность: ${p.position}\nОрганизация: ${p.org}\n\nВСЕ ЗАДАЧИ (${data.tasks.length})\n`;
+  data.tasks.forEach((tk, i) => {
+    t += `\n${i+1}. ${tk.name} [${tk.isRepeating?'ПОВТОРЯЕТСЯ':'разовая'}]\n`;
+    t += `   Описание: ${tk.desc}\n   Частота: ${tk.freq} | Время: ${tk.time} | Стандартизация: ${tk.std}\n`;
+    const clsMap = {'ai-full':'ИИ справится','ai-help':'ИИ помогает','human-only':'Только человек'};
+    if (classifyStore[tk.id]) t += `   Классификация: ${clsMap[classifyStore[tk.id]]||''}\n`;
+    if (classifyReasonStore[tk.id]) t += `   Обоснование: ${classifyReasonStore[tk.id]}\n`;
+  });
+  t += `\nПРОЕКТЫ АВТОМАТИЗАЦИИ (${data.projects.length})\n`;
+  data.projects.forEach((pr, i) => {
+    t += `\nПроект ${i+1}: ${pr.taskName} [${pr.classification==='ai-full'?'ИИ справится':'ИИ помогает'}]\n`;
+    if (pr.product) t += `  Результат: ${pr.product}\n`;
+    if (pr.input) t += `  Входные данные: ${pr.input}\n`;
+    if (pr.process) t += `  Процесс: ${pr.process}\n`;
+    if (pr.behavior) t += `  Поведение: ${pr.behavior}\n`;
+    if (pr.tool) t += `  Инструмент: ${pr.tool}\n`;
+  });
+  navigator.clipboard.writeText(t).then(() =>
+    showModal('Скопировано', 'Карта скопирована в буфер обмена. Вставьте в документ или чат преподавателю.', [
+      { label: 'Готово', primary: true, action: closeModal }
+    ])
+  ).catch(() =>
+    showModal('Ошибка', 'Не удалось скопировать автоматически. Выделите текст вручную.', [
+      { label: 'Ок', primary: true, action: closeModal }
+    ])
+  );
+}
+
+function submitData() {
+  const url = localStorage.getItem('gasWebhook')||'https://script.google.com/macros/s/AKfycbzKor7DEjOFAX_ow-xcD7umg5TNEUWlswiJl-ZUVTDn4hmwnq1Uz2TuFSdZZDVw5stleQ/exec';
+  if (!url) {
+    showModal('Адрес не настроен', 'Преподаватель должен настроить адрес Google Apps Script. Используйте кнопку «Копировать» и отправьте данные вручную.', [
+      { label: 'Копировать', primary: true, action: () => { closeModal(); copyAll(); } },
+      { label: 'Закрыть', primary: false, action: closeModal }
+    ]);
+    return;
+  }
+  showModal('Отправка...', 'Данные отправляются в таблицу преподавателя.', []);
+  fetch(url, {
+    method: 'POST', mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(flattenForSheets(collectAllData()))
+  }).then(() =>
+    showModal('Отправлено!', 'Карта возможностей успешно отправлена преподавателю.', [
+      { label: 'Готово', primary: true, action: closeModal }
+    ])
+  ).catch(() =>
+    showModal('Ошибка соединения', 'Не удалось отправить. Используйте кнопку «Копировать».', [
+      { label: 'Копировать', primary: true, action: () => { closeModal(); copyAll(); } },
+      { label: 'Закрыть', primary: false, action: closeModal }
+    ])
+  );
+}
+
+function flattenForSheets(data) {
+  const p = data.profile;
+  const ts = new Date().toLocaleString('ru-RU');
+  const clsMap = {'ai-full':'ИИ справится','ai-help':'ИИ помогает','human-only':'Только человек'};
+  return data.tasks.map(t => {
+    const pr = data.projects.find(x => x.taskId === t.id);
+    return {
+      timestamp: ts, name: p.name, group: p.group, sphere: p.sphere, position: p.position, org: p.org,
+      task_name: t.name, task_desc: t.desc, task_freq: t.freq, task_time: t.time, task_std: t.std,
+      is_repeating: t.isRepeating?'Да':'Нет',
+      classification: clsMap[classifyStore[t.id]]||'',
+      classify_reason: classifyReasonStore[t.id]||'',
+      proj_product: pr?.product||'', proj_input: pr?.input||'',
+      proj_process: pr?.process||'', proj_behavior: pr?.behavior||'', proj_tool: pr?.tool||''
+    };
+  });
+}
+
+function toggleConfig() {
+  const p = document.getElementById('configPanel');
+  p.style.display = p.style.display === 'flex' ? 'none' : 'flex';
+  if (p.style.display === 'flex') document.getElementById('webhookUrl').value = localStorage.getItem('gasWebhook')||'https://script.google.com/macros/s/AKfycbzKor7DEjOFAX_ow-xcD7umg5TNEUWlswiJl-ZUVTDn4hmwnq1Uz2TuFSdZZDVw5stleQ/exec';
+}
+
+function saveConfig() {
+  const url = document.getElementById('webhookUrl').value.trim();
+  if (url) localStorage.setItem('gasWebhook', url);
+  toggleConfig();
+  showModal('Сохранено', 'Адрес отправки данных сохранён.', [{ label: 'Готово', primary: true, action: closeModal }]);
+}
+
+function showModal(title, msg, btns) {
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalMsg').textContent = msg;
+  const bc = document.getElementById('modalBtns');
+  bc.innerHTML = '';
+  btns.forEach(b => {
+    const el = document.createElement('button');
+    el.className = 'btn ' + (b.primary ? 'btn-primary' : 'btn-secondary');
+    el.textContent = b.label;
+    el.onclick = b.action;
+    bc.appendChild(el);
+  });
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); }
+
+function handleOverlayClick(e) {
+  if (e.target === document.getElementById('modalOverlay')) closeModal();
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── AUTOSAVE ──────────────────────────────────────────────
+// Прошитый URL преподавателя (устанавливается автоматически)
+const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbzKor7DEjOFAX_ow-xcD7umg5TNEUWlswiJl-ZUVTDn4hmwnq1Uz2TuFSdZZDVw5stleQ/exec';
+if (!localStorage.getItem('gasWebhook')) {
+  localStorage.setItem('gasWebhook', DEFAULT_GAS_URL);
+}
+const SAVE_KEY = 'aimap_v1';
+let saveTimer = null;
+
+function scheduleSave() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(saveAll, 800);
+}
+
+function saveAll() {
+  try {
+    // Собираем данные задач прямо из DOM
+    const tasksRaw = [];
+    document.querySelectorAll('.task-card').forEach(card => {
+      const id = card.id.replace('task-', '');
+      tasksRaw.push({
+        id,
+        name: document.getElementById('tname-'+id)?.value || '',
+        desc: document.getElementById('tdesc-'+id)?.value || '',
+        freq: document.getElementById('tfreq-'+id)?.value || '',
+        time: document.getElementById('ttime-'+id)?.value || '',
+        std: document.getElementById('tstd-'+id)?.value || '',
+        isRepeating: document.getElementById('trep-'+id)?.checked || false
+      });
+    });
+
+    // Проекты из DOM
+    const projsRaw = {};
+    document.querySelectorAll('[id^="pproduct-"]').forEach(el => {
+      const id = el.id.replace('pproduct-', '');
+      projsRaw[id] = {
+        product: el.value || '',
+        input: document.getElementById('pinput-'+id)?.value || '',
+        process: document.getElementById('pprocess-'+id)?.value || '',
+        behavior: document.getElementById('pbehavior-'+id)?.value || '',
+        tool: document.getElementById('ptool-'+id)?.value || ''
+      };
+    });
+
+    // Classify reasons из DOM
+    document.querySelectorAll('[id^="clsr-"]').forEach(el => {
+      classifyReasonStore[el.id.replace('clsr-', '')] = el.value;
+    });
+
+    const state = {
+      step: currentStep,
+      taskCount,
+      profile: {
+        name: document.getElementById('fname')?.value || '',
+        group: document.getElementById('fgroup')?.value || '',
+        sphere: document.getElementById('fsphere')?.value || '',
+        position: document.getElementById('fposition')?.value || '',
+        org: document.getElementById('forg')?.value || ''
+      },
+      tasks: tasksRaw,
+      classifyStore: {...classifyStore},
+      classifyReasonStore: {...classifyReasonStore},
+      projects: projsRaw,
+      savedAt: Date.now()
+    };
+    localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+    showSaveIndicator();
+  } catch(e) { /* localStorage может быть недоступен */ }
+}
+
+function restoreAll() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) { addTask(); addTask(); updateNav(); return; }
+    const state = JSON.parse(raw);
+
+    // Профиль
+    const p = state.profile || {};
+    if (document.getElementById('fname')) document.getElementById('fname').value = p.name || '';
+    if (document.getElementById('fgroup')) document.getElementById('fgroup').value = p.group || '';
+    if (document.getElementById('fsphere')) document.getElementById('fsphere').value = p.sphere || '';
+    if (document.getElementById('fposition')) document.getElementById('fposition').value = p.position || '';
+    if (document.getElementById('forg')) document.getElementById('forg').value = p.org || '';
+
+    // Восстановить taskCount чтобы ID не пересекались
+    taskCount = state.taskCount || 0;
+
+    // Задачи
+    const tasks = state.tasks || [];
+    if (tasks.length === 0) { addTask(); addTask(); }
+    else {
+      tasks.forEach(t => {
+        const id = t.id;
+        // Создаём карточку с нужным id напрямую
+        const container = document.getElementById('tasksContainer');
+        const div = document.createElement('div');
+        div.className = 'task-card';
+        div.id = 'task-' + id;
+        div.innerHTML = buildTaskHTML(id);
+        container.appendChild(div);
+        // Заполняем поля
+        document.getElementById('tname-'+id).value = t.name || '';
+        document.getElementById('tdesc-'+id).value = t.desc || '';
+        document.getElementById('tfreq-'+id).value = t.freq || '';
+        document.getElementById('ttime-'+id).value = t.time || '';
+        document.getElementById('tstd-'+id).value = t.std || '';
+        document.getElementById('trep-'+id).checked = t.isRepeating || false;
+      });
+    }
+
+    // Classify store
+    Object.assign(classifyStore, state.classifyStore || {});
+    Object.assign(classifyReasonStore, state.classifyReasonStore || {});
+
+    // Сохранить проекты в кэш для восстановления при buildProjects
+    Object.assign(projCache, state.projects || {});
+
+    // Перейти на сохранённый шаг
+    const savedStep = state.step || 0;
+    if (savedStep > 0) {
+      // Восстановить классификацию если был дальше шага 2
+      if (savedStep >= 2) buildClassify();
+      if (savedStep >= 3) buildProjects();
+      if (savedStep >= 4) buildSummary();
+      goTo(savedStep);
+    } else {
+      updateNav();
+    }
+
+    // Показать уведомление если данные свежие (< 7 дней)
+    const age = Date.now() - (state.savedAt || 0);
+    if (age < 7 * 24 * 3600 * 1000 && tasks.length > 0) {
+      showRestoreBanner(state.savedAt);
+    }
+  } catch(e) {
+    addTask();
+    addTask();
+    updateNav();
+  }
+}
+
+function buildTaskHTML(id) {
+  return `
+    <div class="task-card-header">
+      <span class="task-num">Задача ${id}</span>
+      <button class="btn-remove" onclick="removeTask(${id})" aria-label="Удалить задачу ${id}">
+        <i class="ti ti-trash" aria-hidden="true"></i>
+      </button>
+    </div>
+    <div class="field-group">
+      <label for="tname-${id}">Название задачи</label>
+      <input type="text" id="tname-${id}" placeholder="Что именно вы делаете?" oninput="scheduleSave()">
+    </div>
+    <div class="field-group">
+      <label for="tdesc-${id}">Краткое описание</label>
+      <textarea id="tdesc-${id}" placeholder="Что на входе, что на выходе, кто задействован" oninput="scheduleSave()"></textarea>
+    </div>
+    <div class="field-group">
+      <label for="tfreq-${id}">Частота выполнения</label>
+      <select id="tfreq-${id}" onchange="scheduleSave()">
+        <option value="">— выберите —</option>
+        <option>Ежедневно</option>
+        <option>Несколько раз в неделю</option>
+        <option>Еженедельно</option>
+        <option>Ежемесячно</option>
+        <option>По запросу</option>
+      </select>
+    </div>
+    <div class="field-group">
+      <label for="ttime-${id}">Время на выполнение</label>
+      <input type="text" id="ttime-${id}" placeholder="Например: 30 мин, 2 часа" oninput="scheduleSave()">
+    </div>
+    <div class="field-group">
+      <label for="tstd-${id}">Насколько стандартна задача?</label>
+      <select id="tstd-${id}" onchange="scheduleSave()">
+        <option value="">— выберите —</option>
+        <option>Полностью стандартная</option>
+        <option>В основном стандартная</option>
+        <option>Частично варьируется</option>
+        <option>Сильно варьируется</option>
+      </select>
+    </div>
+    <div class="repeat-row">
+      <label class="checkbox-label">
+        <input type="checkbox" id="trep-${id}" onchange="scheduleSave()">
+        <span>Эта задача <strong>повторяется регулярно</strong> и подходит для анализа автоматизации</span>
+      </label>
+    </div>`;
+}
+
+// Перезаписываем addTask чтобы поля автосохранялись
+function addTask() {
+  taskCount++;
+  const id = taskCount;
+  const container = document.getElementById('tasksContainer');
+  const div = document.createElement('div');
+  div.className = 'task-card';
+  div.id = 'task-' + id;
+  div.innerHTML = buildTaskHTML(id);
+  container.appendChild(div);
+}
+
+// Индикатор сохранения
+let saveIndicatorTimer = null;
+function showSaveIndicator() {
+  let ind = document.getElementById('saveIndicator');
+  if (!ind) {
+    ind = document.createElement('div');
+    ind.id = 'saveIndicator';
+    ind.style.cssText = 'position:fixed;bottom:70px;right:12px;background:rgba(29,158,117,0.92);color:#fff;font-size:0.72rem;padding:5px 10px;border-radius:20px;z-index:300;pointer-events:none;transition:opacity 0.4s;';
+    document.body.appendChild(ind);
+  }
+  ind.textContent = '✓ Сохранено';
+  ind.style.opacity = '1';
+  clearTimeout(saveIndicatorTimer);
+  saveIndicatorTimer = setTimeout(() => { ind.style.opacity = '0'; }, 2000);
+}
+
+// Баннер восстановления
+function showRestoreBanner(savedAt) {
+  const d = new Date(savedAt);
+  const when = d.toLocaleString('ru-RU', { day:'numeric', month:'long', hour:'2-digit', minute:'2-digit' });
+  const banner = document.createElement('div');
+  banner.id = 'restoreBanner';
+  banner.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#1a2744;color:#fff;font-size:0.8rem;padding:0.6rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:8px;z-index:400;';
+  banner.innerHTML = `
+    <span><i class="ti ti-history" style="margin-right:5px;font-size:14px;vertical-align:-2px"></i>Восстановлено с ${when}</span>
+    <div style="display:flex;gap:6px;flex-shrink:0;">
+      <button onclick="clearSave()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:0.72rem;padding:4px 10px;border-radius:20px;cursor:pointer;">Очистить</button>
+      <button onclick="document.getElementById('restoreBanner').remove()" style="background:none;border:none;color:rgba(255,255,255,0.6);font-size:16px;cursor:pointer;padding:0 4px;">✕</button>
+    </div>`;
+  document.body.prepend(banner);
+  setTimeout(() => { if (banner.parentNode) banner.remove(); }, 6000);
+}
+
+function clearSave() {
+  showModal(
+    'Очистить данные?',
+    'Все введённые данные будут удалены из браузера. Это действие нельзя отменить.',
+    [
+      { label: 'Да, очистить', primary: true, action: () => {
+        localStorage.removeItem(SAVE_KEY);
+        closeModal();
+        location.reload();
+      }},
+      { label: 'Отмена', primary: false, action: closeModal }
+    ]
+  );
+}
+
+// Сохранение проектов при вводе (делегирование)
+document.addEventListener('input', e => {
+  const el = e.target;
+  if (el.matches('[id^="pproduct-"],[id^="pinput-"],[id^="pprocess-"],[id^="pbehavior-"],[id^="clsr-"],[id^="fname"],[id^="fgroup"],[id^="fsphere"],[id^="fposition"],[id^="forg"]')) {
+    scheduleSave();
+  }
+});
+document.addEventListener('change', e => {
+  const el = e.target;
+  if (el.matches('[id^="ptool-"],[id^="tfreq-"],[id^="tstd-"],[id^="trep-"]')) {
+    scheduleSave();
+  }
+});
+
+// Сохранять шаг при переходе
+const _goTo = goTo;
+goTo = function(step) {
+  _goTo(step);
+  scheduleSave();
+};
+
+// Сохранять проекты перед уходом со страницы
+window.addEventListener('beforeunload', saveAll);
+window.addEventListener('pagehide', saveAll);
+
+// ── СТАРТ ─────────────────────────────────────────────────
+restoreAll();
+</script>
+</body>
+</html>

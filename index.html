@@ -684,7 +684,10 @@ input[type="checkbox"] {
 <div class="header">
   <div class="header-top">
     <div class="header-icon"><i class="ti ti-brain" style="color:#fff" aria-hidden="true"></i></div>
-    <h1>Карта возможностей<br>автоматизации с ИИ</h1>
+    <h1 style="flex:1">Карта возможностей<br>автоматизации с ИИ</h1>
+    <button onclick="clearSave()" title="Сбросить все данные и начать заново" style="flex-shrink:0;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.75);border-radius:8px;padding:6px 12px;font-size:0.75rem;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:5px;min-height:36px;white-space:nowrap;">
+      <i class="ti ti-trash" style="font-size:13px"></i> Очистить
+    </button>
   </div>
   <div class="progress-wrap" id="progressWrap">
     <div class="progress-step active" id="pg0"></div>
@@ -797,7 +800,12 @@ input[type="checkbox"] {
 
   <!-- ШАГ 4 -->
   <section class="section" id="s4">
-    <h2 class="section-title"><i class="ti ti-chart-bar" aria-hidden="true"></i> Итоговая карта</h2>
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.25rem;">
+      <h2 class="section-title" style="margin-bottom:0"><i class="ti ti-chart-bar" aria-hidden="true"></i> Итоговая карта</h2>
+      <button onclick="clearSave()" style="display:inline-flex;align-items:center;gap:5px;background:none;border:1px solid var(--border-mid);border-radius:20px;padding:5px 12px;font-size:0.75rem;color:var(--text-muted);cursor:pointer;font-family:inherit;min-height:36px;">
+        <i class="ti ti-trash" style="font-size:13px"></i> Очистить данные
+      </button>
+    </div>
     <p class="section-desc">Карта готова. Отправьте преподавателю.</p>
     <div class="summary-grid" id="summaryGrid"></div>
     <div id="summaryContent"></div>
@@ -847,6 +855,16 @@ let taskCount = 0;
 const classifyStore = {};
 const classifyReasonStore = {};
 
+const SUBMITTED_KEY = 'aimap_submitted_v1';
+
+function isAlreadySubmitted() {
+  return !!localStorage.getItem(SUBMITTED_KEY);
+}
+
+function markSubmitted() {
+  localStorage.setItem(SUBMITTED_KEY, new Date().toISOString());
+}
+
 function updateNav() {
   const back = document.getElementById('btnBack');
   const next = document.getElementById('btnNext');
@@ -859,9 +877,20 @@ function updateNav() {
     if (!existing) {
       const sb = document.createElement('button');
       sb.id = 'btnSubmitFixed';
-      sb.className = 'btn btn-submit';
-      sb.innerHTML = '<i class="ti ti-send"></i> Отправить';
-      sb.onclick = submitData;
+      if (isAlreadySubmitted()) {
+        sb.className = 'btn btn-submit';
+        sb.style.cssText = 'opacity:0.45;cursor:not-allowed;filter:grayscale(0.4);';
+        sb.innerHTML = '<i class="ti ti-check"></i> Отправлено';
+        sb.onclick = () => showModal(
+          'Уже отправлено',
+          'Вы уже отправили карту преподавателю. Повторная отправка недоступна.',
+          [{ label: 'Понятно', primary: true, action: closeModal }]
+        );
+      } else {
+        sb.className = 'btn btn-submit';
+        sb.innerHTML = '<i class="ti ti-send"></i> Отправить';
+        sb.onclick = submitData;
+      }
       document.getElementById('navBtns').appendChild(sb);
     }
   } else {
@@ -884,8 +913,14 @@ function goTo(step) {
   for (let i = 0; i < 5; i++) {
     const p = document.getElementById('pg' + i);
     p.classList.remove('active','done');
-    if (i === step) p.classList.add('active');
-    if (i < step) p.classList.add('done');
+    if (step === 4) {
+      // последний шаг — все сегменты заполнены
+      p.classList.add('done');
+    } else if (i === step) {
+      p.classList.add('active');
+    } else if (i < step) {
+      p.classList.add('done');
+    }
   }
   currentStep = step;
   // Scroll active tab into view
@@ -1204,24 +1239,47 @@ function copyAll() {
 }
 
 function submitData() {
+  // Проверка: уже отправлено
+  if (isAlreadySubmitted()) {
+    showModal('Уже отправлено', 'Вы уже отправили карту преподавателю. Повторная отправка недоступна.', [
+      { label: 'Понятно', primary: true, action: closeModal }
+    ]);
+    return;
+  }
+
   const url = localStorage.getItem('gasWebhook')||'https://script.google.com/macros/s/AKfycbzKor7DEjOFAX_ow-xcD7umg5TNEUWlswiJl-ZUVTDn4hmwnq1Uz2TuFSdZZDVw5stleQ/exec';
   if (!url) {
-    showModal('Адрес не настроен', 'Преподаватель должен настроить адрес Google Apps Script. Используйте кнопку «Копировать» и отправьте данные вручную.', [
+    showModal('Адрес не настроен', 'Преподаватель должен настроить адрес Google Apps Script.', [
       { label: 'Копировать', primary: true, action: () => { closeModal(); copyAll(); } },
       { label: 'Закрыть', primary: false, action: closeModal }
     ]);
     return;
   }
+
   showModal('Отправка...', 'Данные отправляются в таблицу преподавателя.', []);
+
   fetch(url, {
     method: 'POST', mode: 'no-cors',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(flattenForSheets(collectAllData()))
-  }).then(() =>
-    showModal('Отправлено!', 'Карта возможностей успешно отправлена преподавателю.', [
+  }).then(() => {
+    // Помечаем как отправлено
+    markSubmitted();
+    // Блокируем кнопку
+    const sb = document.getElementById('btnSubmitFixed');
+    if (sb) {
+      sb.style.cssText = 'opacity:0.45;cursor:not-allowed;filter:grayscale(0.4);flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:0 1.25rem;border-radius:var(--r);font-size:.9rem;font-weight:500;border:none;font-family:inherit;min-height:var(--tap);background:var(--success);color:#fff;';
+      sb.innerHTML = '<i class="ti ti-check"></i> Отправлено';
+      sb.onclick = () => showModal(
+        'Уже отправлено',
+        'Вы уже отправили карту преподавателю. Повторная отправка недоступна.',
+        [{ label: 'Понятно', primary: true, action: closeModal }]
+      );
+    }
+    showModal('Отправлено!', 'Карта возможностей успешно отправлена преподавателю. Повторная отправка заблокирована.', [
       { label: 'Готово', primary: true, action: closeModal }
-    ])
-  ).catch(() =>
+    ]);
+  }).catch(() =>
     showModal('Ошибка соединения', 'Не удалось отправить. Используйте кнопку «Копировать».', [
       { label: 'Копировать', primary: true, action: () => { closeModal(); copyAll(); } },
       { label: 'Закрыть', primary: false, action: closeModal }
@@ -1300,6 +1358,7 @@ function scheduleSave() {
 }
 
 function saveAll() {
+  if (_clearing) return; // не перезаписывать при очистке
   try {
     // Собираем данные задач прямо из DOM
     const tasksRaw = [];
@@ -1503,22 +1562,24 @@ function showSaveIndicator() {
   saveIndicatorTimer = setTimeout(() => { ind.style.opacity = '0'; }, 2000);
 }
 
-// Баннер восстановления
+// Тихое уведомление о восстановлении (без баннера)
 function showRestoreBanner(savedAt) {
   const d = new Date(savedAt);
   const when = d.toLocaleString('ru-RU', { day:'numeric', month:'long', hour:'2-digit', minute:'2-digit' });
-  const banner = document.createElement('div');
-  banner.id = 'restoreBanner';
-  banner.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#1a2744;color:#fff;font-size:0.8rem;padding:0.6rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:8px;z-index:400;';
-  banner.innerHTML = `
-    <span><i class="ti ti-history" style="margin-right:5px;font-size:14px;vertical-align:-2px"></i>Восстановлено с ${when}</span>
-    <div style="display:flex;gap:6px;flex-shrink:0;">
-      <button onclick="clearSave()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:0.72rem;padding:4px 10px;border-radius:20px;cursor:pointer;">Очистить</button>
-      <button onclick="document.getElementById('restoreBanner').remove()" style="background:none;border:none;color:rgba(255,255,255,0.6);font-size:16px;cursor:pointer;padding:0 4px;">✕</button>
-    </div>`;
-  document.body.prepend(banner);
-  setTimeout(() => { if (banner.parentNode) banner.remove(); }, 6000);
+  // Показываем как индикатор сохранения — не ломает layout
+  let ind = document.getElementById('saveIndicator');
+  if (!ind) {
+    ind = document.createElement('div');
+    ind.id = 'saveIndicator';
+    ind.style.cssText = 'position:fixed;bottom:70px;right:12px;background:rgba(26,39,68,0.88);color:#fff;font-size:0.72rem;padding:6px 12px;border-radius:20px;z-index:300;pointer-events:none;transition:opacity 0.4s;';
+    document.body.appendChild(ind);
+  }
+  ind.textContent = '↺ Восстановлено с ' + when;
+  ind.style.opacity = '1';
+  setTimeout(() => { ind.style.opacity = '0'; }, 4000);
 }
+
+let _clearing = false; // флаг — не сохранять при выгрузке если идёт очистка
 
 function clearSave() {
   showModal(
@@ -1526,7 +1587,10 @@ function clearSave() {
     'Все введённые данные будут удалены из браузера. Это действие нельзя отменить.',
     [
       { label: 'Да, очистить', primary: true, action: () => {
+        _clearing = true;
         localStorage.removeItem(SAVE_KEY);
+        localStorage.removeItem(SUBMITTED_KEY);
+        localStorage.removeItem('gasWebhook');
         closeModal();
         location.reload();
       }},
